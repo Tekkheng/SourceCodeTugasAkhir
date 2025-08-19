@@ -1,0 +1,12 @@
+using Accelist.Career.Contracts.ResponseModels.Vacancies;
+using MediatR;
+
+namespace Accelist.Career.Contracts.RequestModels.Vacancies
+{
+    public class SearchVacanciesRequest : IRequest<GetVacanciesListResponse>
+    {
+        public string SearchQuery { get; set; } = string.Empty;
+        public string? BusinessUnitName { get; set; }
+        public string? ExperienceLevel { get; set; }
+    }
+}

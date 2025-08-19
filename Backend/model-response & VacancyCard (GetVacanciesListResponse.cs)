@@ -1,0 +1,24 @@
+namespace Accelist.Career.Contracts.ResponseModels.Vacancies
+{
+    public class GetVacanciesListResponse
+    {
+        public List<VacancyCard> Vacancies { get; set; } = new List<VacancyCard>();
+        public int TotalData { get; set; }
+        public long ExecutionTimeMs { get; set; }
+    }
+
+    public class VacancyCard
+    {
+        public Guid Id { get; set; }
+        public Guid? BlobId { get; set; }
+        public string Title { get; set; } = "";
+        public string BusinessUnitName { get; set; } = "";
+        public string CategoryName { get; set; } = "";
+        public string City { get; set; } = "";
+        public DateTimeOffset EndDate { get; set; }
+        public string? IconUrl { get; set; }
+        public Guid? BusinessUnitId { get; set; }
+        public bool isApplied { get; set; }
+        public double BM25Score { get; set; }
+    }
+}

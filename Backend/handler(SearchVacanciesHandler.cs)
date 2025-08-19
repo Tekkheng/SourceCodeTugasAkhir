@@ -1,0 +1,105 @@
+using System.Diagnostics;
+using Accelist.Career.Commons.Services;
+using Accelist.Career.Contracts.RequestModels.Vacancies;
+using Accelist.Career.Contracts.ResponseModels.Vacancies;
+using Dapper;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
+
+namespace Accelist.Career.Commons.RequestHandlers.Vacancies
+{
+    public class SearchVacanciesRequestHandler : IRequestHandler<SearchVacanciesRequest, GetVacanciesListResponse>
+    {
+        private readonly IConfiguration _config;
+        private readonly IStorageService _storageService;
+
+        public SearchVacanciesRequestHandler(IConfiguration config, IStorageService storageService)
+        {
+            _config = config;
+            _storageService = storageService;
+        }
+
+        public async Task<GetVacanciesListResponse> Handle(SearchVacanciesRequest request, CancellationToken cancellationToken)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            var connectionString = _config.GetConnectionString("PostgreSql");
+
+            await using var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            string sql = @"
+                SET bm25_catalog.bm25_limit = -1;
+                SELECT 
+                    v.""Id"",
+                    v.""Title"",
+                    b.""FilePath"" AS IconUrl,
+                    bu.""Id"" AS BusinessUnitId,
+                    bu.""Name"" AS BusinessUnitName,
+                    c.""Name"" AS CategoryName,
+                    ct.""Name"" AS CityName,
+                    v.""EndDate"" AS ""EndDate"",
+                    (v.bm25_vector <&> to_bm25query('idx_vacancies_bm25_vector', tokenize(@keyword, 'bert'))) * -1 AS BM25Score
+                FROM ""Vacancies"" v
+                LEFT JOIN ""Blobs"" b ON v.""BlobId"" = b.""Id""
+                LEFT JOIN ""BusinessUnits"" bu ON v.""BusinessUnitId"" = bu.""Id""
+                LEFT JOIN ""Categories"" c ON v.""CategoryId"" = c.""Id""
+                LEFT JOIN ""Cities"" ct ON v.""CityId"" = ct.""Id""
+                WHERE v.bm25_vector IS NOT NULL
+                  AND v.bm25_vector <&> to_bm25query('idx_vacancies_bm25_vector', tokenize(@keyword, 'bert')) <> 0
+            ";
+
+            if (!string.IsNullOrWhiteSpace(request.BusinessUnitName))
+                sql += " AND bu.\"Name\" = @businessUnit";
+
+            if (!string.IsNullOrWhiteSpace(request.ExperienceLevel))
+                sql += " AND c.\"Name\" = @expLevel";
+
+            sql += " ORDER BY BM25Score DESC";
+
+            var parameters = new
+            {
+                keyword = request.SearchQuery,
+                businessUnit = request.BusinessUnitName,
+                expLevel = request.ExperienceLevel
+            };
+
+            var rawVacancies = (await connection.QueryAsync<VacancyCard>(sql, parameters)).ToList();
+
+            var finalVacancies = new List<VacancyCard>();
+            foreach (var item in rawVacancies)
+            {
+                string? iconUrl = null;
+                if (!string.IsNullOrEmpty(item.IconUrl))
+                {
+                    iconUrl = await _storageService.GetPresignedUrlReadAsync(item.IconUrl);
+                }
+
+                finalVacancies.Add(new VacancyCard
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    IconUrl = iconUrl,
+                    BusinessUnitId = item.BusinessUnitId,
+                    BusinessUnitName = item.BusinessUnitName,
+                    CategoryName = item.CategoryName,
+                    City = item.City,
+                    EndDate = item.EndDate,
+                    isApplied = false,
+                    BM25Score = item.BM25Score
+                });
+            }
+
+            stopwatch.Stop();
+
+            return new GetVacanciesListResponse
+            {
+                Vacancies = finalVacancies,
+                TotalData = finalVacancies.Count,
+                ExecutionTimeMs = stopwatch.ElapsedMilliseconds
+            };
+        }
+    }
+}

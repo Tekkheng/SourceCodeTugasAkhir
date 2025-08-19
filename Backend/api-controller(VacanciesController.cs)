@@ -1,0 +1,16 @@
+[HttpGet("search-vacancies")]
+public async Task<ActionResult<GetVacanciesListResponse>> SearchVacancies(
+    [FromQuery] string query,
+    [FromQuery] string? businessUnitName,
+    [FromQuery] string? experienceLevel)
+{
+    var request = new SearchVacanciesRequest
+    {
+        SearchQuery = query,
+        BusinessUnitName = businessUnitName,
+        ExperienceLevel = experienceLevel
+    };
+
+    var response = await _mediator.Send(request);
+    return Ok(response);
+}
