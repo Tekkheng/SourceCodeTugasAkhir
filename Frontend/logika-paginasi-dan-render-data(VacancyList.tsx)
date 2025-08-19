@@ -1,0 +1,6 @@
+const vacancies = searchData?.vacancies ?? allVacancies? vacancies ?? [];
+setVacancyDataLength(vacancies.length);
+const startIndex = (currentPage - 1) * PAGE_SIZE;
+const paginatedData = vacancies.slice(startIndex, startIndex +
+PAGE_SIZE);
+setPaginatedData(paginatedData);

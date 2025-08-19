@@ -1,0 +1,7 @@
+<VacancyList
+    allVacancies={allVacancies}
+    searchData={searchData}
+    convertDate={convertDate}
+    handleCopyLink={handleCopyLink}
+    handleApplyButtonClick={handleApplyButtonClick}
+/>

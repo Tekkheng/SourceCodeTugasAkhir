@@ -1,0 +1,11 @@
+const { vacancies, isLoading, isError } = useSearchVacancyList();
+return (
+    <VacancyLayout
+        isDetailPage={false}
+        allVacancies={allVacancies}
+        searchData={vacancies}
+        popupState={popupState}
+        setPopup={setPopup}
+        isApplied={false}
+    />
+);

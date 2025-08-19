@@ -1,0 +1,1 @@
+searchVacanciesList: baseUrl + "/api/Vacancies/search-vacancies"

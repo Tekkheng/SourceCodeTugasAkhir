@@ -1,0 +1,13 @@
+export const useSearchVacancyList = () => {
+    const swrFetcher = useSwrFetcherWithAccessToken();
+    const { job, businessUnit, experienceLevel } = useFilterJob(state => state); 
+    const url =`${BackendApiUrl.searchVacanciesList}?query=${encodeURIComponent(job)}&businessUnitName=${encodeURIComponent(businessUnit)}&
+    experi enceLevel=${encodeURIComponent(experienceLevel)}`;
+
+    const { data: vacancies, error } = useSWR<VacancyList>(url, swrFetcher);
+    return {
+        vacancies,
+        isLoading: !vacancies &&
+        !error, isError: error,
+    };
+}

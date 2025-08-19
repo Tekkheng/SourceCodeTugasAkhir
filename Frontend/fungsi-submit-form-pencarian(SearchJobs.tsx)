@@ -1,0 +1,14 @@
+const handleSubmit = (event: FormEvent<HTMLFormElement>) => { 
+    event preventDefault();
+    setJob(localJob);
+    setBusinessUnit(localBusinessUnit);
+    setExperienceLevel(localExperienceLevel);
+
+const params = new URLSearchParams({ job: localJob, 
+businessUnit: localBusinessUnit, 
+experienceLevel:
+localExperienceLevel,
+});
+
+router.push(`/vacancy?${params.toString()}`);
+};
